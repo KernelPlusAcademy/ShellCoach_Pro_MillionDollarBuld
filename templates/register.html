@@ -1,21 +1,58 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Register - ShellCoach</title>
-  <link rel="stylesheet" href="/static/styles.css">
+    <meta charset="UTF-8">
+    <title>Register | ShellCoach</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .register-box {
+            border: 2px solid #00ff88;
+            padding: 30px;
+            border-radius: 12px;
+            background-color: #222;
+            width: 350px;
+            box-shadow: 0 0 20px #00ff88;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 12px 0;
+            background-color: #000;
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #00ff88;
+            color: #000;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+        h2 {
+            text-align: center;
+            color: #00ff88;
+        }
+    </style>
 </head>
 <body>
-  <div class="auth-container">
-    <img src="/static/img/kernelplus_logo.png" class="logo" alt="Kernel+ Academy Logo">
-    <h2>Create Your ShellCoach Account</h2>
-    <form method="POST">
-      <input type="text" name="username" placeholder="Username" required>
-      <input type="password" name="password" placeholder="Password" required>
-      <button type="submit">Register</button>
-    </form>
-    <p>Already registered? <a href="/login">Login here</a></p>
-  </div>
+    <div class="register-box">
+        <h2>Create Account</h2>
+        <form method="POST" action="{{ url_for('register') }}">
+            <input type="text" name="username" placeholder="Choose a Username" required>
+            <input type="password" name="password" placeholder="Create a Password" required>
+            <button type="submit">Register</button>
+        </form>
+    </div>
 </body>
 </html>
