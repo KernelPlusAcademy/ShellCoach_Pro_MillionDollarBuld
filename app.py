@@ -1,94 +1,115 @@
-import os
-import subprocess
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
-import openai
+import os
+import pexpect
+from openai import OpenAI
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "default-secret-key")
-
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "defaultsecret")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 db = SQLAlchemy(app)
 
-# Set OpenAI API Key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Initialize OpenAI if key is present
+openai_api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=openai_api_key) if openai_api_key else None
 
+# User model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
+    password = db.Column(db.String(200), nullable=False)
 
-# Store shell output history
-terminal_history = []
-
+# Home
 @app.route('/')
 def index():
-    if 'user_id' in session:
-        return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
+# Register
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash('Username already exists. Try another.', 'error')
+            return redirect(url_for('register'))
+
+        hashed_pw = generate_password_hash(password)
+        new_user = User(username=username, password=hashed_pw)
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Registration successful. Please log in.', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
+
+# Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user = User.query.filter_by(username=username, password=password).first()
-        if user:
+
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password, password):
             session['user_id'] = user.id
             session['username'] = user.username
             return redirect(url_for('dashboard'))
-        return render_template('login.html', error="Invalid credentials")
+        else:
+            flash('Invalid username or password', 'error')
+            return redirect(url_for('login'))
+
     return render_template('login.html')
 
+# Logout
 @app.route('/logout')
 def logout():
     session.clear()
+    flash('You have been logged out.', 'success')
     return redirect(url_for('login'))
 
+# Dashboard (Shell UI)
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    explanation = ""
     output = ""
-    show_explanation = request.form.get("show_explanation") == "on"
+    explanation = ""
 
     if request.method == 'POST':
         command = request.form['command']
-        username = session.get("username")
+        try:
+            # Execute command in sandbox
+            child = pexpect.spawn('/bin/bash', ['-c', command])
+            child.expect(pexpect.EOF)
+            output = child.before.decode()
 
-        # Built-in supported commands
-        supported_commands = ["ls", "pwd", "whoami", "cd", "mkdir", "rm", "man", "echo", "cat", "touch", "date", "clear"]
-        shell_output = ""
-
-        if command.split()[0] in supported_commands:
-            try:
-                shell_output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, text=True)
-            except subprocess.CalledProcessError as e:
-                shell_output = e.output
-        else:
-            shell_output = f"Command '{command}' is not supported in this terminal."
-
-        if show_explanation:
-            try:
-                response = openai.chat.completions.create(
+            # AI Explanation fallback
+            if client:
+                explanation_prompt = f"Explain the Linux command: {command}"
+                response = client.chat.completions.create(
                     model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "You are a helpful Linux assistant."},
-                        {"role": "user", "content": f"Explain the command: {command}"}
-                    ]
+                    messages=[{"role": "user", "content": explanation_prompt}]
                 )
-                explanation = response.choices[0].message.content
-            except Exception as e:
-                explanation = f"Error fetching explanation: {str(e)}"
+                explanation = response.choices[0].message.content.strip()
 
-        terminal_history.append((f"{username}@shell:~$ {command}", shell_output, explanation))
+        except Exception as e:
+            output = str(e)
+            explanation = "Unable to explain command."
 
-    return render_template("dashboard.html", terminal_history=terminal_history)
+    return render_template(
+        'dashboard.html',
+        username=session['username'],
+        output=output,
+        explanation=explanation
+    )
 
 if __name__ == '__main__':
     with app.app_context():
