@@ -1,10 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
-import os
-
-# Load environment variables
 load_dotenv()
+
+import os
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
