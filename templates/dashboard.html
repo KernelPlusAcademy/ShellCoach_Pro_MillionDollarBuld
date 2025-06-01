@@ -1,84 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>ShellCoach Pro</title>
+    <meta charset="UTF-8">
+    <title>ShellCoach Dashboard</title>
     <style>
         body {
-            background-color: #1e1e2f;
-            color: #f0f0f0;
-            font-family: monospace;
-            margin: 0;
-            padding: 0;
-        }
-        #terminal {
-            background-color: #000000;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: "Courier New", Courier, monospace;
             padding: 20px;
-            height: 90vh;
+        }
+        .terminal {
+            width: 100%;
+            max-width: 900px;
+            margin: auto;
+            background-color: #000;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #00ff99;
             overflow-y: auto;
+            height: 600px;
+        }
+        .prompt {
+            color: #00ff99;
+        }
+        .output, .explanation {
+            margin-left: 15px;
             white-space: pre-wrap;
         }
-        #input-line {
-            display: flex;
-            align-items: center;
-            padding: 10px;
+        .form-container {
+            margin-top: 20px;
         }
-        #cmd {
-            background-color: #1e1e2f;
-            color: #f0f0f0;
+        input[type="text"] {
+            width: 80%;
+            background-color: #111;
+            color: #d4d4d4;
             border: none;
-            outline: none;
-            flex: 1;
-            font-family: monospace;
-            font-size: 16px;
-        }
-        .branding {
             padding: 10px;
-            background-color: #26263a;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            font-family: "Courier New", Courier, monospace;
         }
-        .branding img {
-            height: 40px;
+        input[type="submit"] {
+            background-color: #00ff99;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        label {
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-    <div class="branding">
-        <img src="/static/img/kernelplus_logo.png" alt="Kernel+ Academy Logo">
-        <div>Logged in as: {{ username }}</div>
-    </div>
-    <div id="terminal"></div>
-    <div id="input-line">
-        <span>$</span>
-        <input type="text" id="cmd" autofocus />
+    <div class="terminal">
+        {% for prompt, output, explanation in terminal_history %}
+            <div><span class="prompt">{{ prompt }}</span></div>
+            <div class="output">{{ output }}</div>
+            {% if explanation %}
+                <div class="explanation"><strong>💡 Explanation:</strong> {{ explanation }}</div>
+            {% endif %}
+            <hr style="border: 0; border-top: 1px dashed #555;">
+        {% endfor %}
     </div>
 
-    <script>
-        const cmdInput = document.getElementById("cmd");
-        const terminal = document.getElementById("terminal");
-
-        cmdInput.addEventListener("keydown", function(e) {
-            if (e.key === "Enter") {
-                const command = cmdInput.value;
-                const userInput = document.createElement("div");
-                userInput.textContent = "$ " + command;
-                terminal.appendChild(userInput);
-                fetch("/execute", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ command })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    const output = document.createElement("div");
-                    output.textContent = data.output;
-                    terminal.appendChild(output);
-                    terminal.scrollTop = terminal.scrollHeight;
-                });
-                cmdInput.value = "";
-            }
-        });
-    </script>
+    <div class="form-container">
+        <form method="POST">
+            <label for="command">Enter command:</label><br>
+            <input type="text" name="command" id="command" autofocus required>
+            <input type="submit" value="Run">
+            <br><br>
+            <input type="checkbox" name="show_explanation" id="show_explanation">
+            <label for="show_explanation">Explain this command</label>
+        </form>
+        <form method="GET" action="/logout" style="margin-top: 10px;">
+            <input type="submit" value="Logout" style="background-color: #ff5555;">
+        </form>
+    </div>
 </body>
 </html>
