@@ -1,15 +1,16 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ShellCoach Dashboard</title>
+  <title>ShellCoach Terminal</title>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
   <div class="top-bar">
     <div class="logo-title">
-      <img src="/static/img/kernelplus_logo.png" alt="Kernel+ Logo" class="logo">
-      <h1>ShellCoach – CentOS Style Terminal</h1>
+      <img src="/static/img/kernelplus_logo.png" class="logo" alt="Kernel+ Logo">
+      <h1>ShellCoach - CentOS Style Terminal</h1>
     </div>
     <div class="toggle-group">
       <label class="switch">
@@ -18,12 +19,12 @@
       </label>
       <span class="toggle-label">Explain Commands with AI</span>
     </div>
-    <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+    <a href="/logout" class="logout-link">Logout</a>
   </div>
 
   <div class="terminal">
     <div id="terminal-output" class="terminal-output"></div>
-    <input id="terminal-input" class="terminal-input" type="text" placeholder="[centos@kernelplus ~]$" autofocus>
+    <input id="terminal-input" class="terminal-input" placeholder="[centos@kernelplus ~]$" autofocus>
     <div id="command-explanation" class="explanation-box" style="display:none;"></div>
   </div>
 
