@@ -1,80 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>ShellCoach Dashboard</title>
-    <style>
-        body {
-            background-color: #1e1e1e;
-            color: #d4d4d4;
-            font-family: "Courier New", Courier, monospace;
-            padding: 20px;
-        }
-        .terminal {
-            width: 100%;
-            max-width: 900px;
-            margin: auto;
-            background-color: #000;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px #00ff99;
-            overflow-y: auto;
-            height: 600px;
-        }
-        .prompt {
-            color: #00ff99;
-        }
-        .output, .explanation {
-            margin-left: 15px;
-            white-space: pre-wrap;
-        }
-        .form-container {
-            margin-top: 20px;
-        }
-        input[type="text"] {
-            width: 80%;
-            background-color: #111;
-            color: #d4d4d4;
-            border: none;
-            padding: 10px;
-            font-family: "Courier New", Courier, monospace;
-        }
-        input[type="submit"] {
-            background-color: #00ff99;
-            color: #000;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-        }
-        label {
-            font-size: 14px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>ShellCoach Terminal</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #002b5c; /* Kernel+ navy */
+      font-family: 'Fira Code', monospace;
+      color: #00FF00;
+    }
+    .terminal-container {
+      background-color: #0d1117;
+      width: 90%;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
+    }
+    .checkbox-label {
+      color: white;
+      font-family: 'Fira Code', monospace;
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .output {
+      white-space: pre-wrap;
+      color: #00ff00;
+      margin-bottom: 10px;
+    }
+    .explanation {
+      background-color: #1c1c1c;
+      color: #ffcc00;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      background-color: #1e1e1e;
+      color: white;
+      border: 1px solid #444;
+      font-family: 'Fira Code', monospace;
+      font-size: 1em;
+      margin-bottom: 10px;
+    }
+    .prompt {
+      color: white;
+    }
+    .command-line {
+      display: flex;
+      align-items: center;
+    }
+    .command-line span {
+      margin-right: 5px;
+    }
+  </style>
 </head>
 <body>
-    <div class="terminal">
-        {% for prompt, output, explanation in terminal_history %}
-            <div><span class="prompt">{{ prompt }}</span></div>
-            <div class="output">{{ output }}</div>
-            {% if explanation %}
-                <div class="explanation"><strong>💡 Explanation:</strong> {{ explanation }}</div>
-            {% endif %}
-            <hr style="border: 0; border-top: 1px dashed #555;">
-        {% endfor %}
+  <div class="terminal-container">
+    <label class="checkbox-label">
+      <input type="checkbox" id="explainToggle" name="explain" {% if explanation %}checked{% endif %}>
+      <span style="margin-left: 8px;">Explain commands with AI</span>
+    </label>
+
+    <div class="output">
+      <p>Welcome to ShellCoach</p>
+      {% if output %}
+        <pre>{{ output }}</pre>
+      {% endif %}
     </div>
 
-    <div class="form-container">
-        <form method="POST">
-            <label for="command">Enter command:</label><br>
-            <input type="text" name="command" id="command" autofocus required>
-            <input type="submit" value="Run">
-            <br><br>
-            <input type="checkbox" name="show_explanation" id="show_explanation">
-            <label for="show_explanation">Explain this command</label>
-        </form>
-        <form method="GET" action="/logout" style="margin-top: 10px;">
-            <input type="submit" value="Logout" style="background-color: #ff5555;">
-        </form>
+    {% if explanation %}
+    <div class="explanation">
+      <strong>Explanation:</strong> {{ explanation }}
     </div>
+    {% endif %}
+
+    <form method="POST">
+      <div class="command-line">
+        <span class="prompt">$</span>
+        <input type="text" name="command" autofocus autocomplete="off" placeholder="Type a Linux command and hit Enter" />
+      </div>
+    </form>
+  </div>
 </body>
 </html>
