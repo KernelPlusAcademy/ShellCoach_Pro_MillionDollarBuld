@@ -1,23 +1,22 @@
 from flask import Flask, render_template, request, redirect, session, url_for
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import inspect
 import os
 
 # Initialize Flask app
 app = Flask(__name__)
 
-# Load secret key from environment variable or use fallback for dev
+# Load secret key from environment variable or use fallback
 app.secret_key = os.environ.get("SECRET_KEY", "dev_key_for_local_testing")
 
 # Configure SQLite database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Initialize SQLAlchemy
 db = SQLAlchemy(app)
 
-# Define the User model with explicit table name
+# Define the User model
 class User(db.Model):
-    __tablename__ = 'users'  # Important fix
+    __tablename__ = 'users'  # Explicit table name
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
@@ -44,7 +43,7 @@ def login():
             return "Invalid credentials. Please try again."
     return render_template('login.html')
 
-# Register route
+# Registration route
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     try:
@@ -78,17 +77,18 @@ def logout():
     session.pop('user_id', None)
     return redirect(url_for('login'))
 
-# Optional debug route
+# Debug route to check DB tables
 @app.route('/debug-db')
 def debug_db():
     try:
-        tables = db.engine.table_names()
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
         return f"Tables in DB: {tables}"
     except Exception as e:
         return f"❌ DB Error: {e}"
 
-# Run the app (useful for local testing only)
+# Run the app locally
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()  # Ensures tables are created locally
+        db.create_all()
     app.run(debug=True)
