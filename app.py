@@ -76,5 +76,6 @@ def logout():
 # Run the app
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()  # Ensure tables exist
+        db.create_all()
     app.run(debug=True)
+
