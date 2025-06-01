@@ -69,7 +69,8 @@ def register():
 def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return "✅ Welcome to ShellCoach Dashboard!"
+    return render_template('dashboard.html')
+
 
 # Logout route
 @app.route('/logout')
