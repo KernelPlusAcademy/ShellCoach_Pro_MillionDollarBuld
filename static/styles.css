@@ -1,60 +1,10 @@
 
 body {
   background-color: #003366;
-  color: white;
-  font-family: monospace;
-  margin: 0;
-  padding: 0;
-}
-
-.auth-container {
-  max-width: 400px;
-  margin: 100px auto;
-  padding: 20px;
-  background: #111;
-  border-radius: 10px;
-  text-align: center;
-}
-
-.auth-container input {
-  width: 90%;
-  padding: 10px;
-  margin: 10px 0;
-  font-size: 16px;
-  border: none;
-  border-radius: 5px;
-}
-
-.auth-container button {
-  background-color: #0f0;
-  color: #000;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.auth-container button:hover {
-  background-color: #00cc00;
-}
-
-.logo {
-  max-width: 150px;
-  margin-bottom: 20px;
-}
-body {
-  background-color: #003366;
   color: #fff;
   font-family: monospace;
   margin: 0;
   padding: 0;
-}
-
-.logo-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 .logo {
@@ -65,9 +15,15 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 30px;
   background: #001f3f;
+  padding: 15px 25px;
   border-bottom: 2px solid #00FF00;
+}
+
+.logo-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .logout-link {
@@ -83,12 +39,18 @@ body {
   color: #000;
 }
 
+.toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .terminal {
-  max-width: 900px;
-  margin: 30px auto;
+  max-width: 960px;
+  margin: 20px auto;
   background: #000;
-  border-radius: 6px;
   padding: 20px;
+  border-radius: 6px;
   height: 500px;
   overflow-y: auto;
 }
@@ -163,7 +125,36 @@ input:checked + .slider:before {
   transform: translateX(22px);
 }
 
-.toggle-label {
-  margin-left: 10px;
-  font-size: 14px;
+.auth-container {
+  max-width: 400px;
+  margin: 100px auto;
+  background-color: #111;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 12px #00FF00;
+  text-align: center;
+}
+
+.auth-container h2 {
+  color: #00FF00;
+}
+
+.auth-container input {
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+  font-size: 16px;
+}
+
+.auth-container button {
+  background-color: #00FF00;
+  color: black;
+  font-weight: bold;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+}
+
+.auth-container button:hover {
+  background-color: #00cc00;
 }
