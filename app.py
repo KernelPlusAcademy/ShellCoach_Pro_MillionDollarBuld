@@ -73,5 +73,6 @@ def logout():
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
-    app.run(debug=True)
+        db.create_all()  # ✅ Creates users.db if it doesn't exist
+    app.run(host='0.0.0.0', port=5000)
+
