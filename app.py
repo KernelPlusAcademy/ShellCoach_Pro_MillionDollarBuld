@@ -1,113 +1,96 @@
-from flask import Flask, render_template, request, redirect, session, url_for, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from functools import wraps
-from dotenv import load_dotenv
 import os
-import pexpect
+import subprocess
+from flask import Flask, render_template, request, redirect, session, url_for
+from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+import openai
 
 load_dotenv()
+
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "default-secret-key")
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 db = SQLAlchemy(app)
+
+# Set OpenAI API Key
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'username' not in session:
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
+# Store shell output history
+terminal_history = []
 
 @app.route('/')
 def index():
-    if 'username' in session:
+    if 'user_id' in session:
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        user = User.query.filter_by(username=request.form['username'], password=request.form['password']).first()
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username, password=password).first()
         if user:
             session['user_id'] = user.id
             session['username'] = user.username
-            session['cwd'] = os.getcwd()
             return redirect(url_for('dashboard'))
-        else:
-            return render_template('login.html', error="Invalid credentials")
+        return render_template('login.html', error="Invalid credentials")
     return render_template('login.html')
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        new_user = User(username=request.form['username'], password=request.form['password'])
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for('login'))
-    return render_template('register.html')
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    return render_template('dashboard.html', username=session['username'])
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
 
-@app.route('/execute', methods=['POST'])
-@login_required
-def execute():
-    command = request.json.get('command', '').strip()
+@app.route('/dashboard', methods=['GET', 'POST'])
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
 
-    if 'cwd' not in session:
-        session['cwd'] = os.getcwd()
-    cwd = session['cwd']
+    explanation = ""
+    output = ""
+    show_explanation = request.form.get("show_explanation") == "on"
 
-    if command.startswith("cd"):
-        try:
-            parts = command.split()
-            new_dir = os.path.expanduser("~") if len(parts) == 1 else os.path.abspath(os.path.join(cwd, parts[1]))
-            if os.path.isdir(new_dir):
-                session['cwd'] = new_dir
-                return jsonify({'output': f"Changed directory to {new_dir}"})
-            else:
-                return jsonify({'output': f"No such directory: {parts[1]}"})
-        except Exception as e:
-            return jsonify({'output': f"Error: {str(e)}"})
+    if request.method == 'POST':
+        command = request.form['command']
+        username = session.get("username")
 
-    simulated_commands = {
-        "ls": "file1.txt  file2.txt  documents/",
-        "pwd": cwd,
-        "whoami": session['username'],
-        "mkdir": "Directory created (simulated)",
-        "rm": "File removed (simulated)",
-        "touch": "File created (simulated)",
-        "man": "This is a simulated man page.",
-        "clear": ""
-    }
+        # Built-in supported commands
+        supported_commands = ["ls", "pwd", "whoami", "cd", "mkdir", "rm", "man", "echo", "cat", "touch", "date", "clear"]
+        shell_output = ""
 
-    if command in simulated_commands:
-        return jsonify({'output': simulated_commands[command]})
+        if command.split()[0] in supported_commands:
+            try:
+                shell_output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, text=True)
+            except subprocess.CalledProcessError as e:
+                shell_output = e.output
+        else:
+            shell_output = f"Command '{command}' is not supported in this terminal."
 
-    try:
-        child = pexpect.spawn(command, cwd=cwd, timeout=5)
-        child.expect(pexpect.EOF)
-        output = child.before.decode('utf-8').strip()
-    except Exception as e:
-        output = f"Error: {str(e)}"
+        if show_explanation:
+            try:
+                response = openai.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are a helpful Linux assistant."},
+                        {"role": "user", "content": f"Explain the command: {command}"}
+                    ]
+                )
+                explanation = response.choices[0].message.content
+            except Exception as e:
+                explanation = f"Error fetching explanation: {str(e)}"
 
-    return jsonify({'output': output})
+        terminal_history.append((f"{username}@shell:~$ {command}", shell_output, explanation))
 
-if __name__ == "__main__":
+    return render_template("dashboard.html", terminal_history=terminal_history)
+
+if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
