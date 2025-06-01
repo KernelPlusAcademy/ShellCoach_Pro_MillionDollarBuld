@@ -1,47 +1,29 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>ShellCoach Dashboard</title>
   <link rel="stylesheet" href="/static/styles.css">
-  <style>
-    .explanation-box {
-      background: #222;
-      border-left: 4px solid #0f0;
-      padding: 10px;
-      margin-top: 10px;
-      font-size: 14px;
-    }
-    .logout-link {
-      color: #fff;
-      text-decoration: none;
-      font-size: 14px;
-      padding: 4px 8px;
-      border: 1px solid #0f0;
-      border-radius: 4px;
-    }
-    .logout-link:hover {
-      background-color: #0f0;
-      color: #000;
-    }
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      align-items: center;
-    }
-  </style>
 </head>
 <body>
   <div class="top-bar">
-    <h2>ShellCoach - CentOS Style Terminal</h2>
+    <div class="logo-title">
+      <img src="/static/img/kernelplus_logo.png" alt="Kernel+ Logo" class="logo">
+      <h1>ShellCoach – CentOS Style Terminal</h1>
+    </div>
+    <div class="toggle-group">
+      <label class="switch">
+        <input type="checkbox" id="explainToggle">
+        <span class="slider round"></span>
+      </label>
+      <span class="toggle-label">Explain Commands with AI</span>
+    </div>
     <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
   </div>
 
   <div class="terminal">
     <div id="terminal-output" class="terminal-output"></div>
-    <input id="terminal-input" class="terminal-input" type="text" placeholder="Type a Linux command and press Enter..." autofocus>
+    <input id="terminal-input" class="terminal-input" type="text" placeholder="[centos@kernelplus ~]$" autofocus>
     <div id="command-explanation" class="explanation-box" style="display:none;"></div>
   </div>
 
@@ -49,6 +31,7 @@
     const inputField = document.getElementById("terminal-input");
     const outputArea = document.getElementById("terminal-output");
     const explanationBox = document.getElementById("command-explanation");
+    const explainToggle = document.getElementById("explainToggle");
 
     inputField.addEventListener("keydown", async (e) => {
       if (e.key === "Enter") {
@@ -67,15 +50,18 @@
           const data = await res.json();
           outputArea.innerHTML += `<div class="command-output">${data.output.replace(/\n/g, "<br>")}</div>`;
 
-          // Fetch explanation
-          const explainRes = await fetch("/explain", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ command })
-          });
-          const explainData = await explainRes.json();
-          explanationBox.innerHTML = `<strong>Explanation:</strong> ${explainData.explanation}`;
-          explanationBox.style.display = "block";
+          if (explainToggle.checked) {
+            const explainRes = await fetch("/explain", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ command })
+            });
+            const explainData = await explainRes.json();
+            explanationBox.innerHTML = `<strong>Explanation:</strong> ${explainData.explanation}`;
+            explanationBox.style.display = "block";
+          } else {
+            explanationBox.style.display = "none";
+          }
 
         } catch (error) {
           outputArea.innerHTML += `<div class="error">Error: ${error.message}</div>`;
