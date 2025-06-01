@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect
 import os
@@ -32,26 +32,23 @@ def login():
             session['username'] = user.username
             return redirect(url_for('dashboard'))
         else:
-            return "Invalid credentials. Please try again."
+            return "Invalid credentials"
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    try:
-        if request.method == 'POST':
-            username = request.form['username']
-            password = request.form['password']
-            if User.query.filter_by(username=username).first():
-                return "Username already taken."
-            new_user = User(username=username, password=password)
-            db.session.add(new_user)
-            db.session.commit()
-            session['user_id'] = new_user.id
-            session['username'] = new_user.username
-            return redirect(url_for('dashboard'))
-        return render_template('register.html')
-    except Exception as e:
-        return f"❌ Internal Server Error: {e}"
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        if User.query.filter_by(username=username).first():
+            return "Username already taken"
+        new_user = User(username=username, password=password)
+        db.session.add(new_user)
+        db.session.commit()
+        session['user_id'] = new_user.id
+        session['username'] = new_user.username
+        return redirect(url_for('dashboard'))
+    return render_template('register.html')
 
 @app.route('/dashboard')
 def dashboard():
@@ -64,16 +61,18 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-@app.route('/debug-db')
-def debug_db():
-    try:
-        inspector = inspect(db.engine)
-        tables = inspector.get_table_names()
-        return f"Tables in DB: {tables}"
-    except Exception as e:
-        return f"❌ DB Error: {e}"
-
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True)
+@app.route('/explain', methods=['POST'])
+def explain():
+    command = request.json.get('command', '')
+    explanations = {
+        'cd': 'cd changes the current directory.',
+        'mkdir': 'mkdir creates a new directory.',
+        'touch': 'touch creates a new empty file.',
+        'echo': 'echo prints text to the terminal.',
+        'cat': 'cat displays the contents of a file.',
+        'man': 'man shows the manual for a command.',
+        'pwd': 'pwd prints the current directory.',
+        'ls': 'ls lists files and directories.',
+        'rm': 'rm removes files or directories.'
+    }
+    return jsonify({'explanation': explanations.get(command.split()[0], 'No explanation available.')})
