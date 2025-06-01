@@ -7,7 +7,8 @@ import pexpect
 
 load_dotenv()
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "default_secret_key")
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 db = SQLAlchemy(app)
 
