@@ -1,97 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>ShellCoach Terminal</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap">
+  <meta charset="UTF-8">
+  <title>ShellCoach Dashboard</title>
   <style>
     body {
+      background-color: #121212;
+      color: #0f0;
+      font-family: monospace;
       margin: 0;
-      padding: 0;
-      background-color: #002b5c; /* Kernel+ navy */
-      font-family: 'Fira Code', monospace;
-      color: #00FF00;
-    }
-    .terminal-container {
-      background-color: #0d1117;
-      width: 90%;
-      max-width: 900px;
-      margin: 40px auto;
       padding: 20px;
+    }
+
+    .terminal {
+      background: #000;
+      border: 2px solid #333;
       border-radius: 6px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.4);
-    }
-    .checkbox-label {
-      color: white;
-      font-family: 'Fira Code', monospace;
+      padding: 10px;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
       display: flex;
-      align-items: center;
-      margin-bottom: 10px;
+      flex-direction: column;
     }
-    .output {
+
+    .terminal-output {
+      flex: 1;
+      overflow-y: auto;
       white-space: pre-wrap;
+      margin-bottom: 10px;
+    }
+
+    .terminal-input {
+      background: #111;
+      color: #0f0;
+      border: none;
+      padding: 10px;
+      font-size: 16px;
+      font-family: monospace;
+      width: 100%;
+      outline: none;
+    }
+
+    .user-input {
       color: #00ff00;
-      margin-bottom: 10px;
     }
-    .explanation {
-      background-color: #1c1c1c;
-      color: #ffcc00;
-      padding: 10px;
-      border-radius: 4px;
-      font-size: 0.9em;
-      margin-top: 10px;
+
+    .command-output {
+      color: #ffffff;
     }
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      background-color: #1e1e1e;
-      color: white;
-      border: 1px solid #444;
-      font-family: 'Fira Code', monospace;
-      font-size: 1em;
-      margin-bottom: 10px;
+
+    .error {
+      color: red;
     }
-    .prompt {
-      color: white;
-    }
-    .command-line {
+
+    .top-bar {
       display: flex;
-      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
     }
-    .command-line span {
-      margin-right: 5px;
-    }
-    #terminal {
-      margin-top: 20px;
-      width: 100%;
-      height: 300px;
-      background-color: black;
-      border: 1px solid #444;
+
+    .logout-link {
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+      padding: 4px 8px;
+      border: 1px solid #0f0;
       border-radius: 4px;
+    }
+
+    .logout-link:hover {
+      background-color: #0f0;
+      color: #000;
     }
   </style>
 </head>
 <body>
-  <div class="terminal-container">
-    <label class="checkbox-label">
-      <input type="checkbox" id="explainToggle" name="explain" {% if explanation %}checked{% endif %}>
-      <span style="margin-left: 8px;">Explain commands with AI</span>
-    </label>
 
-    <div class="output">
-      <p>Welcome to ShellCoach</p>
-      {% if output %}
-        <pre>{{ output }}</pre>
-      {% endif %}
-    </div>
+  <div class="top-bar">
+    <h2>Welcome to ShellCoach</h2>
+    <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+  </div>
 
-    {% if explanation %}
-    <div class="explanation">
-      <strong>Explanation:</strong> {{ explanation }}
-    </div>
-    {% endif %}
+  <div class="terminal">
+    <div id="terminal-output" class="terminal-output"></div>
+    <input id="terminal-input" class="terminal-input" type="text" placeholder="Type a Linux command and press Enter..." autofocus>
+  </div>
 
-    <form method="POST">
-      <div class="command-line">
-        <span class="prompt">$</span>
-        <input t
+  <script>
+    const inputField = document.getElementById("terminal-input");
+    const outputArea = document.getElementById("terminal-output");
+
+    inputField.addEventListener("keydown", async (e) => {
+      if (e.key === "Enter") {
+        const command = inputField.value.trim();
+        if (!command) return;
+
+        // Display the typed command
+        outputArea.innerHTML += `<div class="user-input">$ ${command}</div>`;
+        inputField.value = "";
+
+        try {
+          const res = await fetch("/execute", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ command })
+          });
+
+          const data = await res.json();
+          outputArea.innerHTML += `<div class="command-output">${data.output.replace(/\n/g, "<br>")}</div>`;
+        } catch (error) {
+          outputArea.innerHTML += `<div class="error">Error: ${error.message}</div>`;
+        }
+
+        outputArea.scrollTop = outputArea.scrollHeight;
+      }
+    });
+  </script>
+
+</body>
+</html>
