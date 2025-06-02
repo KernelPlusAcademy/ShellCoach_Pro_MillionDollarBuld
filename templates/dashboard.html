@@ -2,73 +2,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ShellCoach Terminal</title>
+    <title>ShellCoach - Interactive Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .terminal-output {
             white-space: pre-wrap;
-            font-family: monospace;
+            font-family: 'Courier New', Courier, monospace;
         }
     </style>
 </head>
-<body class="bg-[#0F172A] text-white h-screen p-4 font-mono">
-    <div class="flex justify-between items-center mb-4">
-        <img src="/static/img/logo.png" alt="Logo" class="w-28">
-        <label class="flex items-center space-x-2">
-            <input type="checkbox" id="toggleExplanation" class="accent-blue-500">
-            <span>AI Explanation</span>
-        </label>
+<body class="bg-[#0F172A] text-white h-screen flex items-center justify-center px-4">
+    <div class="bg-[#1E293B] rounded-xl shadow-xl w-full max-w-3xl p-6 terminal-output overflow-y-auto h-[90vh]" id="terminal">
+        <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center space-x-2">
+                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+            </div>
+            <h1 class="text-lg font-semibold text-gray-300">ShellCoach</h1>
+            <img src="/static/img/logo.png" alt="Kernel+ Academy Logo" class="w-32">
+        </div>
+        <div id="output-area"></div>
+        <form id="commandForm" class="mt-4 flex gap-2" onsubmit="return runCommand()">
+            <span class="text-green-400">user@shellcoach</span><span class="text-white">:$</span>
+            <input id="commandInput" type="text" class="bg-transparent border-b border-gray-500 outline-none w-full ml-2 text-white" autocomplete="off" placeholder="Type a command..." autofocus required>
+        </form>
     </div>
-    <div id="terminal" class="bg-[#1E293B] p-4 rounded-lg shadow-md h-[75vh] overflow-y-auto terminal-output">
-        <p><span class="text-green-400">user@shellcoach</span>:<span class="text-white">$</span> <span id="lastCommand">ls</span></p>
-        <p id="commandResult">file1.txt  file2.txt</p>
-        <div id="aiExplanation" class="mt-3 hidden"><strong>Explanation:</strong> The <code>ls</code> command lists files in the current directory.</div>
-    </div>
-    <form id="commandForm" class="mt-4 flex gap-2" onsubmit="return runCommand()">
-        <input id="commandInput" type="text" class="bg-[#334155] w-full p-2 rounded" placeholder="Type a Linux command like cd /, ls -al, mkdir test..." autofocus required>
-        <button class="bg-blue-600 px-4 py-2 rounded">Run</button>
-    </form>
 
     <script>
-        const terminal = document.getElementById("terminal");
-        const form = document.getElementById("commandForm");
+        const outputArea = document.getElementById("output-area");
         const input = document.getElementById("commandInput");
-        const toggle = document.getElementById("toggleExplanation");
+        const terminal = document.getElementById("terminal");
 
-        function runCommand() {
+        async function runCommand() {
             const cmd = input.value.trim();
-            if (cmd === '') return false;
+            if (!cmd) return false;
 
-            const entry = document.createElement("div");
-            entry.innerHTML = `
-                <p><span class="text-green-400">user@shellcoach</span>:<span class="text-white">$</span> ${cmd}</p>
-                <p>${mockCommandResult(cmd)}</p>
-                ${toggle.checked ? `<div class="mt-3"><strong>Explanation:</strong> ${mockExplanation(cmd)}</div>` : ""}
-            `;
-            terminal.appendChild(entry);
+            appendOutput(`<span class="text-green-400">user@shellcoach</span><span class="text-white">:$</span> <span class="text-white">${cmd}</span>`);
             input.value = "";
+
+            try {
+                const res = await fetch('/execute', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({command: cmd})
+                });
+                const data = await res.json();
+                appendOutput(`<span class="text-white">${data.output}</span>`);
+            } catch (err) {
+                appendOutput(`<span class="text-red-400">Error: ${err.message}</span>`);
+            }
+
             terminal.scrollTop = terminal.scrollHeight;
             return false;
         }
 
-        function mockCommandResult(cmd) {
-            if (cmd.startsWith("ls")) return "file1.txt  file2.txt  docs/  scripts/";
-            if (cmd.startsWith("cd")) return ""; // simulate directory change
-            if (cmd.startsWith("mkdir")) return ""; // simulate success
-            if (cmd.startsWith("rm")) return ""; // simulate file deletion
-            if (cmd.startsWith("echo")) return cmd.slice(5);
-            if (cmd.startsWith("touch")) return ""; // simulate file creation
-            return "Command executed.";
-        }
-
-        function mockExplanation(cmd) {
-            if (cmd.startsWith("ls")) return "Lists the contents of the current directory.";
-            if (cmd.startsWith("cd")) return "Changes the current directory.";
-            if (cmd.startsWith("mkdir")) return "Creates a new directory.";
-            if (cmd.startsWith("rm")) return "Deletes files or directories.";
-            if (cmd.startsWith("echo")) return "Displays a line of text.";
-            if (cmd.startsWith("touch")) return "Creates an empty file.";
-            return "This is a simulated explanation of the entered Linux command.";
+        function appendOutput(content) {
+            const line = document.createElement("p");
+            line.innerHTML = content;
+            outputArea.appendChild(line);
         }
     </script>
 </body>
