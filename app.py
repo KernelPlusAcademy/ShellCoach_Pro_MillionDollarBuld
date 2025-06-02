@@ -43,13 +43,6 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html')
 
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('dashboard.html')
-
-
 import openai
 
 # Load API key from environment variable
