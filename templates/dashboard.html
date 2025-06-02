@@ -2,24 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ShellCoach Dashboard</title>
+    <title>ShellCoach Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .terminal-output {
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
 </head>
-<body class="bg-[#0F172A] text-white h-screen p-4">
+<body class="bg-[#0F172A] text-white h-screen p-4 font-mono">
     <div class="flex justify-between items-center mb-4">
-        <img src="/static/img/logo.png" alt="Logo" class="w-24">
+        <img src="/static/img/logo.png" alt="Logo" class="w-28">
+        <label class="flex items-center space-x-2">
+            <input type="checkbox" id="toggleExplanation" class="accent-blue-500">
+            <span>AI Explanation</span>
+        </label>
     </div>
-    <form method="POST">
-        <div class="bg-[#1E293B] p-6 rounded font-mono shadow-lg">
-            <p><span class="text-green-400">user@shellcoach</span>:<span class="text-white">$</span>
-            <input type="text" name="command" placeholder="Enter Linux command..." class="bg-[#0F172A] text-white border-none focus:outline-none w-2/3"/></p>
-            {% if explanation %}
-            <div class="mt-4">
-                <strong>Explanation:</strong> {{ explanation }}
-            </div>
-            {% endif %}
-        </div>
-        <button class="mt-4 bg-blue-600 px-4 py-2 rounded">Run</button>
+    <div id="terminal" class="bg-[#1E293B] p-4 rounded-lg shadow-md h-[75vh] overflow-y-auto terminal-output">
+        <p><span class="text-green-400">user@shellcoach</span>:<span class="text-white">$</span> <span id="lastCommand">ls</span></p>
+        <p id="commandResult">file1.txt  file2.txt</p>
+        <div id="aiExplanation" class="mt-3 hidden"><strong>Explanation:</strong> The <code>ls</code> command lists files in the current directory.</div>
+    </div>
+    <form id="commandForm" class="mt-4 flex gap-2" onsubmit="return runCommand()">
+        <input id="commandInput" type="text" class="bg-[#334155] w-full p-2 rounded" placeholder="Type a Linux command like cd /, ls -al, mkdir test..." autofocus required>
+        <button class="bg-blue-600 px-4 py-2 rounded">Run</button>
     </form>
+
+    <script>
+        const terminal = document.getElementById("terminal");
+        const form = document.getElementById("commandForm");
+        const input = document.getElementById("commandInput");
+        const toggle = document.getElementById("toggleExplanation");
+
+        function runCommand() {
+            const cmd = input.value.trim();
+            if (cmd === '') return false;
+
+            const entry = document.createElement("div");
+            entry.innerHTML = `
+                <p><span class="text-green-400">user@shellcoach</span>:<span class="text-white">$</span> ${cmd}</p>
+                <p>${mockCommandResult(cmd)}</p>
+                ${toggle.checked ? `<div class="mt-3"><strong>Explanation:</strong> ${mockExplanation(cmd)}</div>` : ""}
+            `;
+            terminal.appendChild(entry);
+            input.value = "";
+            terminal.scrollTop = terminal.scrollHeight;
+            return false;
+        }
+
+        function mockCommandResult(cmd) {
+            if (cmd.startsWith("ls")) return "file1.txt  file2.txt  docs/  scripts/";
+            if (cmd.startsWith("cd")) return ""; // simulate directory change
+            if (cmd.startsWith("mkdir")) return ""; // simulate success
+            if (cmd.startsWith("rm")) return ""; // simulate file deletion
+            if (cmd.startsWith("echo")) return cmd.slice(5);
+            if (cmd.startsWith("touch")) return ""; // simulate file creation
+            return "Command executed.";
+        }
+
+        function mockExplanation(cmd) {
+            if (cmd.startsWith("ls")) return "Lists the contents of the current directory.";
+            if (cmd.startsWith("cd")) return "Changes the current directory.";
+            if (cmd.startsWith("mkdir")) return "Creates a new directory.";
+            if (cmd.startsWith("rm")) return "Deletes files or directories.";
+            if (cmd.startsWith("echo")) return "Displays a line of text.";
+            if (cmd.startsWith("touch")) return "Creates an empty file.";
+            return "This is a simulated explanation of the entered Linux command.";
+        }
+    </script>
 </body>
 </html>
